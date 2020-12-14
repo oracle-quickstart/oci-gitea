@@ -1,0 +1,78 @@
+#cloud-config
+final_message: "The system is finally up, after $UPTIME seconds"
+growpart:
+  devices: ['/']
+  mode: auto
+  ignore_growroot_disabled: false
+package_reboot_if_required: true
+package_update: true
+package_upgrade: true
+packages:
+  - docker
+  - docker-engine
+  - docker-compose
+  - firewalld
+  - libselinux-python3
+  - python3
+  - python3-pip
+  - python3-setuptools
+  - yum-cron
+write_files:
+  - content: |
+      #!/bin/bash
+      cd /root/gitea
+      docker-compose pull
+      docker-compose up -d
+    path: /etc/cron.daily/docker-compose-pull
+  - content: |
+      ---
+      networks:
+        common:
+      services:
+        gitea:
+          depends_on:
+            - "mysql"
+          environment:
+            APP_NAME: "${GITEA_APP_NAME}"
+            DB_HOST: "mysql:3306"
+            DB_NAME: "${GITEA_DB_NAME}"
+            DB_PASSWD: "${GITEA_DB_PASSWD}"
+            DB_TYPE: "mysql"
+            DB_USER: "${GITEA_DB_USER}"
+            HTTP_PORT: "3000"
+            LFS_START_SERVER: "true"
+            RUN_MODE: "prod"
+            SSH_DOMAIN: "${GITEA_SSH_DOMAIN}"
+            SSH_LISTEN_PORT: "${GITEA_SSH_LISTEN_PORT}"
+            SSH_PORT: "${GITEA_SSH_PORT}"
+          image: "gitea/gitea:latest"
+          networks:
+            - "common"
+          ports:
+            - "80:3000"
+            - "${GITEA_SSH_PORT}:${GITEA_SSH_LISTEN_PORT}"
+          restart: "always"
+          volumes:
+            - "gitea:/data"
+        mysql:
+          command: --default-authentication-plugin=mysql_native_password
+          environment:
+            MYSQL_DATABASE: "${GITEA_DB_NAME}"
+            MYSQL_PASSWORD: "${GITEA_DB_PASSWD}"
+            MYSQL_ROOT_PASSWORD: "${GITEA_DB_ROOT_PASSWD}"
+            MYSQL_USER: "${GITEA_DB_USER}"
+          expose:
+            - "3306"
+          image: "mysql:latest"
+          networks:
+            - "common"
+          restart: "always"
+          volumes:
+            - "mysql:/var/lib/mysql"
+      version: "3"
+      volumes:
+        gitea:
+        mysql:
+
+    path: /root/gitea/docker-compose.yml
+

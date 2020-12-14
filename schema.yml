@@ -1,0 +1,170 @@
+---
+description: Deploy Gitea on OracleLinux 7
+schemaVersion: 1.1.0
+source:
+  type: web
+  reference: https://www.oracle.com
+title: Deploy Gitea on OracleLinux 7
+variableGroups:
+  - title: Hidden
+    variables:
+      - compartment_ocid
+      - tenancy_ocid
+      - region
+      - image_oraclelinux_7
+      - gitea_ssh_listen_port
+    visible: false
+  - title: Network Configuration
+    variables:
+      - vcn_compartment_ocid
+      - vcn_ocid
+      - subnet_compartment_ocid
+      - subnet_ocid
+      - public_ip
+    visible: true
+  - title: Server Configuration
+    variables:
+      - availability_domain
+      - fault_domain
+      - shape
+      - boot_volume_size_in_gbs
+      - ssh_public_key
+    visible: true
+  - title: Gitea Configuration
+    variables:
+      - gitea_app_name
+      - gitea_db_name
+      - gitea_db_passwd
+      - gitea_db_user
+      - gitea_ssh_domain
+      - gitea_ssh_port
+      - gitea_db_root_passwd
+    visible: true
+variables:
+  availability_domain:
+    dependsOn:
+      compartmentId: ${compartment_ocid}
+    required: true
+    title: Availability Domain
+    type: oci:identity:availabilitydomain:name
+  gitea_app_name:
+    description: 5 to 120 charachter alphanumeric Application Name
+    maxLength: 120
+    minLength: 5
+    pattern: "^([0-9]|[A-Z]|[a-z]| |:)+$"
+    required: true
+    title: Application Name
+    type: string
+  gitea_db_name:
+    description: 3 to 60 charachter alphanumeric, Gitea database name
+    maxLength: 60
+    minLength: 3
+    pattern: "^([0-9]|[A-Z]|[a-z])+$"
+    required: true
+    title: Gitea Database Name
+    type: string
+  gitea_db_user:
+    description: 5 to 60 charachter alphanumeric Gitea Database Username
+    maxLength: 60
+    minLength: 5
+    pattern: "^([0-9]|[A-Z]|[a-z])+$"
+    required: true
+    title: Gitea Database Username
+    type: string
+  gitea_db_passwd:
+    description: 10 to 60 charachter alphanumeric Gitea Database Password
+    maxLength: 60
+    minLength: 10
+    pattern: "^([0-9]|[A-Z]|[a-z])+$"
+    required: true
+    title: Gitea Database Password
+    type: string
+  gitea_ssh_domain:
+    description: 5 to 60 charachter alphanumeric
+    maxLength: 60
+    minLength: 5
+    pattern: "^([0-9]|[A-Z]|[a-z])+$"
+    title: FQDN for SSH Access
+    type: string
+  gitea_ssh_port:
+    description: Ingress SSH port on the OCI Compute Instance
+    minimum: 1025
+    maximum: 65535
+    required: true
+    title: Gitea SSH Port
+    type: number
+  gitea_db_root_passwd:
+    description: 10 to 60 charachter alphanumeric Admin Password
+    maxLength: 60
+    minLength: 10
+    pattern: "^([0-9]|[A-Z]|[a-z])+$"
+    required: true
+    title: Gitea Database Admin Password
+    type: string
+  boot_volume_size_in_gbs:
+    maximum: 16384
+    minimum: 50
+    required: true
+    type: number
+  compartment_ocid:
+    required: true
+    title: Compartment
+    type: oci:identity:compartment:id
+  fault_domain:
+    dependsOn:
+      compartmentId: ${compartment_ocid}
+      availabilityDomainName: ${availability_domain}
+    required: true
+    title: Fault Domain
+    type: oci:identity:faultdomain:name
+  public_ip:
+    required: true
+    title: Public IP
+    type: boolean
+  region:
+    required: true
+    title: region
+    type: oci:identity:region:name
+  shape:
+    dependsOn:
+      compartmentId: ${compartment_ocid}
+    default: "VM.Standard.E2.1.Micro"
+    required: true
+    title: Instance Shape
+    type: oci:core:instanceshape:name
+  tenancy_ocid:
+    required: true
+    title: Tenancy
+    type: string
+  ssh_public_key:
+    additionalProps:
+      allowMultiple: true
+    default: [""]
+    pattern: "((^(ssh-rsa AAAAB3NzaC1yc2|ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNT|ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzOD|ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1Mj|ssh-ed25519 AAAAC3NzaC1lZDI1NTE5|ssh-dss AAAAB3NzaC1kc3)[0-9A-Za-z+/]+[=]{0,3})( [^,]*)?)(,((ssh-rsa AAAAB3NzaC1yc2|ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNT|ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzOD|ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1Mj|ssh-ed25519 AAAAC3NzaC1lZDI1NTE5|ssh-dss AAAAB3NzaC1kc3)[0-9A-Za-z+/]+[=]{0,3})( [^,]*)?)*$"
+    required: false
+    title: SSH Public Key
+    type: oci:core:ssh:publickey
+  subnet_compartment_ocid:
+    default: ${vcn_compartment_ocid}
+    required: true
+    title: Subnet Compartment
+    type: oci:identity:compartment:id
+  subnet_ocid:
+    dependsOn:
+      compartmentId: ${subnet_compartment_ocid}
+      vcnId: ${vcn_ocid}
+    required: true
+    title: Subnet
+    type: oci:core:subnet:id
+  vcn_compartment_ocid:
+    default: ${compartment_ocid}
+    required: true
+    title: VCN Compartment
+    type: oci:identity:compartment:id
+  vcn_ocid:
+    dependsOn:
+      compartmentId: ${vcn_compartment_ocid}
+    required: true
+    title: VCN
+    type: oci:core:vcn:id
+
